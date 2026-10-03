@@ -20,8 +20,8 @@ public class player : MonoBehaviour
     Vector3 forward;
     Vector3 right;
     Vector3 camdir;
-    float moveright;
-    float moveforward;
+    public float moveright;
+    public float moveforward;
     public float turnspeed = 0.5f;
     float finalspeed;
     bool dashoncooldown = false;
@@ -47,6 +47,7 @@ public class player : MonoBehaviour
     public AudioSource three;
     public AudioSource four;
     public AudioSource battlechime;
+    bool ismoving = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -172,15 +173,34 @@ public class player : MonoBehaviour
                 rb.Move(rb.transform.forward * dashspeed);
                 break;
             case GameManager.GameState.Battle2D:
+                if(Input.GetKeyDown(KeyCode.A)||Input.GetKeyDown(KeyCode.D))
+                {
+                    ismoving = true;
+                    forward = gameManager.closestEnemy.transform.position - rb.transform.position;
+                    forward.y = 0;
+                    forward = forward.normalized;
+                }
+                else if(Input.GetKeyUp(KeyCode.A)||Input.GetKeyUp(KeyCode.D))
+                {
+                    forward = gameManager.closestEnemy.transform.position - rb.transform.position;
+                    forward.y = 0;
+                    forward = forward.normalized;
+                    ismoving = false;
+                }
                 jumpvel = rb.isGrounded && Input.GetKey(KeyCode.W) ? jumpforce : (!rb.isGrounded ? jumpvel - gravity * Time.deltaTime : 0);
-                moveforward = Input.GetAxis("Horizontal");
-                forward = gameManager.closestEnemy.transform.position - rb.transform.position;
-                forward.y = 0;
-                forward = forward.normalized;
-                turndir = Quaternion.LookRotation(forward);
+                moveforward = Input.GetAxisRaw("Horizontal");
+                bool parellel = Vector3.Dot(cam.transform.right,forward.normalized)>0;
+                if (!parellel)
+                {
+                    moveforward = -moveforward;
+                }
+                Vector3 lookdir = gameManager.closestEnemy.transform.position - rb.transform.position;
+                lookdir.y = 0;
+                lookdir = lookdir.normalized;
+                turndir = Quaternion.LookRotation(lookdir);
                 rb.transform.rotation = Quaternion.Slerp(rb.transform.rotation, turndir, turnspeed);
                 finalspeed = Input.GetKey(KeyCode.LeftControl) ? sprintspeed : speed;
-                rb.Move(forward*moveforward * finalspeed + Vector3.up * jumpvel);
+                rb.Move(forward * moveforward * finalspeed + Vector3.up * jumpvel);
                 break;
 
         }
